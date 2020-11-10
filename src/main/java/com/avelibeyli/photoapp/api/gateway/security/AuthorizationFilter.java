@@ -1,5 +1,6 @@
 package com.avelibeyli.photoapp.api.gateway.security;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,18 +46,21 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
 
     private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
         String authorizationHeader = request.getHeader(env.getProperty("authorization.token.header.name"));
-
         String token = authorizationHeader.replace(env.getProperty("authorization.token.header.prefix"), "");
-        String userId = Jwts.parser()
-                .setSigningKey(secretKey)
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
 
-        if (userId == null) return null;
+        try {
+            String userId = Jwts.parser()
+                    .setSigningKey(secretKey)
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
 
-        return new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>()); // this is the second authentication. Like first time we do it when we create user and login , next time we need to create again UsernamePasswordToken and authenticate it
+            if (userId == null) return null;
 
+            return new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>()); // this is the second authentication. Like first time we do it when we create user and login , next time we need to create again UsernamePasswordToken and authenticate it
 
+        } catch (JwtException e) {
+            throw new IllegalStateException(String.format("token %s cannot be trusted", token));
+        }
     }
 }
