@@ -16,14 +16,10 @@ import javax.crypto.SecretKey;
 @EnableWebSecurity
 public class WebSecurity extends WebSecurityConfigurerAdapter {
 
-    private final SecretKey secretKey;
-    private final JwtConfig jwtConfig;
     private final Environment env;
 
     @Autowired
-    public WebSecurity(SecretKey secretKey, JwtConfig jwtConfig, Environment env) {
-        this.secretKey = secretKey;
-        this.jwtConfig = jwtConfig;
+    public WebSecurity(Environment env) {
         this.env = env;
     }
 
@@ -39,6 +35,6 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, env.getProperty("api.login.url")).permitAll()
                 .anyRequest().authenticated()
                 .and()
-                .addFilter(new AuthorizationFilter(authenticationManager(), env, secretKey, jwtConfig));
+                .addFilter(new AuthorizationFilter(authenticationManager(), env));
     }
 }

@@ -18,49 +18,45 @@ import java.util.ArrayList;
 
 public class AuthorizationFilter extends BasicAuthenticationFilter {
     private final Environment env;
-    private final SecretKey secretKey;
-    private final JwtConfig jwtConfig;
 
-    public AuthorizationFilter(AuthenticationManager authenticationManager, Environment env, SecretKey secretKey, JwtConfig jwtConfig) {
+    public AuthorizationFilter(AuthenticationManager authenticationManager, Environment env) {
         super(authenticationManager);
         this.env = env;
-        this.secretKey = secretKey;
-        this.jwtConfig = jwtConfig;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        String authorizationHeader = request.getHeader(env.getProperty("authorization.token.header.name"));
-
-        if (authorizationHeader == null || !(authorizationHeader.startsWith(env.getProperty("authorization.token.header.prefix")))) {
+        String header = request.getHeader(env.getProperty("authorization.token.header.name"));
+        if (header == null || !header.startsWith(env.getProperty("authorization.token.header.prefix"))) {
             chain.doFilter(request, response);
             return;
         }
-        UsernamePasswordAuthenticationToken authenticationToken = getAuthentication(request);
 
-        SecurityContextHolder.getContext().setAuthentication(authenticationToken); // this is like authmanager.authenticate(our Authentication)
+        UsernamePasswordAuthenticationToken authentication = getAuthentication(request);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         chain.doFilter(request, response);
-
-
     }
 
     private UsernamePasswordAuthenticationToken getAuthentication(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader(env.getProperty("authorization.token.header.name"));
-        String token = authorizationHeader.replace(env.getProperty("authorization.token.header.prefix"), "");
+        String header = request.getHeader(env.getProperty("authorization.token.header.name"));
 
-        try {
-            String userId = Jwts.parser()
-                    .setSigningKey(secretKey)
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
-
-            if (userId == null) return null;
-
-            return new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>()); // this is the second authentication. Like first time we do it when we create user and login , next time we need to create again UsernamePasswordToken and authenticate it
-
-        } catch (JwtException e) {
-            throw new IllegalStateException(String.format("token %s cannot be trusted", token));
+        if (header == null) {
+            return null;
         }
+        String token = header.replace(env.getProperty("authorization.token.header.prefix"), "");
+
+        System.err.println(123);
+        System.err.println(token);
+        String userId = Jwts.parser()
+                .setSigningKey(env.getProperty("token.secret"))
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+
+        if (userId == null) {
+            return null;
+        }
+
+        return new UsernamePasswordAuthenticationToken(userId, null, new ArrayList<>());
     }
 }
