@@ -29,12 +29,14 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                 .headers().frameOptions().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS); // this makes our spring security not to create session every time some client is signing in , so we need out request to be reauthorized every time they do request. OncePerRequest
 
-        http.authorizeRequests()
+        http
+                .addFilter(new AuthorizationFilter(authenticationManager(), env))
+
+                .authorizeRequests()
                 .antMatchers(env.getProperty("api.h2console.url")).permitAll()
                 .antMatchers(HttpMethod.POST, env.getProperty("api.signUp.url")).permitAll()
                 .antMatchers(HttpMethod.POST, env.getProperty("api.login.url")).permitAll()
                 .anyRequest().authenticated()
-                .and()
-                .addFilter(new AuthorizationFilter(authenticationManager(), env));
+                ;
     }
 }
