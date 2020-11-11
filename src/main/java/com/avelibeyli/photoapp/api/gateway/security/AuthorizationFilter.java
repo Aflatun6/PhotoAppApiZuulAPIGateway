@@ -43,8 +43,6 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
         }
         String token = header.replace(env.getProperty("authorization.token.header.prefix"), "");
 
-        System.err.println(123);
-        System.err.println(token);
         String userId = Jwts.parser()
 //                .setSigningKey(env.getProperty("token.secret"))
                 .setSigningKey(Keys.hmacShaKeyFor(env.getProperty("token.secret").getBytes()))
