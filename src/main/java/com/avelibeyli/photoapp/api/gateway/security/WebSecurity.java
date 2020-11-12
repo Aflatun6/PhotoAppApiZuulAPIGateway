@@ -31,12 +31,13 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
 
         http
                 .addFilter(new AuthorizationFilter(authenticationManager(), env))
-
                 .authorizeRequests()
+                .antMatchers(env.getProperty("actuator.url.path")).permitAll()
                 .antMatchers(env.getProperty("api.h2console.url")).permitAll()
+                .antMatchers(env.getProperty("users.actuator.url.path")).permitAll()
                 .antMatchers(HttpMethod.POST, env.getProperty("api.signUp.url")).permitAll()
                 .antMatchers(HttpMethod.POST, env.getProperty("api.login.url")).permitAll()
                 .anyRequest().authenticated()
-                ;
+        ;
     }
 }
